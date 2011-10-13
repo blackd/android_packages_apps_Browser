@@ -18,6 +18,7 @@ package com.android.browser;
 
 import com.android.browser.search.SearchEngine;
 
+import android.Manifest;
 import android.app.SearchManager;
 import android.app.backup.BackupManager;
 import android.content.ContentProvider;
@@ -29,6 +30,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.UriMatcher;
+import android.content.pm.PackageManager;
 import android.database.AbstractCursor;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -54,8 +56,10 @@ import java.util.regex.Pattern;
 public class BrowserProvider extends ContentProvider {
 
     private SQLiteOpenHelper mOpenHelper;
+    private DatabaseHelper mPrivateOpenHelper;
     private BackupManager mBackupManager;
     private static final String sDatabaseName = "browser.db";
+    private static final String sPrivateDatabaseName = "private_browser.db";
     private static final String TAG = "BrowserProvider";
     private static final String ORDER_BY = "visits DESC, date DESC";
 
@@ -223,8 +227,8 @@ public class BrowserProvider extends ContentProvider {
     private static class DatabaseHelper extends SQLiteOpenHelper {
         private Context mContext;
 
-        public DatabaseHelper(Context context) {
-            super(context, sDatabaseName, null, DATABASE_VERSION);
+        public DatabaseHelper(Context context, String dbFileName) {
+            super(context, dbFileName, null, DATABASE_VERSION);
             mContext = context;
         }
 
@@ -365,7 +369,9 @@ public class BrowserProvider extends ContentProvider {
     @Override
     public boolean onCreate() {
         final Context context = getContext();
-        mOpenHelper = new DatabaseHelper(context);
+        mOpenHelper = new DatabaseHelper(context, sDatabaseName);
+        context.deleteDatabase(sPrivateDatabaseName);
+        mPrivateOpenHelper = new DatabaseHelper(context, sPrivateDatabaseName);
         mBackupManager = new BackupManager(context);
         // we added "picasa web album" into default bookmarks for version 19.
         // To avoid erasing the bookmark table, we added it explicitly for
@@ -806,7 +812,15 @@ public class BrowserProvider extends ContentProvider {
             mResultsCursor = null;
             return results;
         }
-        SQLiteDatabase db = mOpenHelper.getReadableDatabase();
+        Context context = getContext();
+        SQLiteDatabase db = null;
+        if (context.pffCheckCallingOrSelfPermission(Manifest.permission.READ_HISTORY_BOOKMARKS) == 
+            PackageManager.PERMISSION_PRIVACY_MODE) {
+            db = mPrivateOpenHelper.getReadableDatabase();
+        }
+        else {
+            db = mOpenHelper.getReadableDatabase();
+        }
 
         if (match == URI_MATCH_SUGGEST || match == URI_MATCH_BOOKMARKS_SUGGEST) {
             String suggestSelection;
