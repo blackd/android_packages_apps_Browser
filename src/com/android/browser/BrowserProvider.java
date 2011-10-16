@@ -925,7 +925,14 @@ public class BrowserProvider extends ContentProvider {
     @Override
     public Uri insert(Uri url, ContentValues initialValues) {
         boolean isBookmarkTable = false;
-        SQLiteDatabase db = mOpenHelper.getWritableDatabase();
+        SQLiteDatabase db;
+        if (getContext().pffCheckCallingOrSelfPermission(android.Manifest.permission.WRITE_HISTORY_BOOKMARKS) == 
+            PackageManager.PERMISSION_PRIVACY_MODE) {
+            db = mPrivateOpenHelper.getWritableDatabase();
+        }
+        else {
+            db = mOpenHelper.getWritableDatabase();
+        }
 
         int match = URI_MATCHER.match(url);
         Uri uri = null;
@@ -975,7 +982,14 @@ public class BrowserProvider extends ContentProvider {
 
     @Override
     public int delete(Uri url, String where, String[] whereArgs) {
-        SQLiteDatabase db = mOpenHelper.getWritableDatabase();
+        SQLiteDatabase db;
+        if (getContext().pffCheckCallingOrSelfPermission(android.Manifest.permission.WRITE_HISTORY_BOOKMARKS) == 
+            PackageManager.PERMISSION_PRIVACY_MODE) {
+            db = mPrivateOpenHelper.getWritableDatabase();
+        }
+        else {
+            db = mOpenHelper.getWritableDatabase();
+        }
 
         int match = URI_MATCHER.match(url);
         if (match == -1 || match == URI_MATCH_SUGGEST) {
@@ -1023,7 +1037,14 @@ public class BrowserProvider extends ContentProvider {
     @Override
     public int update(Uri url, ContentValues values, String where,
             String[] whereArgs) {
-        SQLiteDatabase db = mOpenHelper.getWritableDatabase();
+        SQLiteDatabase db;
+        if (getContext().pffCheckCallingOrSelfPermission(android.Manifest.permission.WRITE_HISTORY_BOOKMARKS) == 
+            PackageManager.PERMISSION_PRIVACY_MODE) {
+            db = mPrivateOpenHelper.getWritableDatabase();
+        }
+        else {
+            db = mOpenHelper.getWritableDatabase();
+        }
 
         int match = URI_MATCHER.match(url);
         if (match == -1 || match == URI_MATCH_SUGGEST) {
