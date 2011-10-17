@@ -812,15 +812,8 @@ public class BrowserProvider extends ContentProvider {
             mResultsCursor = null;
             return results;
         }
-        Context context = getContext();
-        SQLiteDatabase db = null;
-        if (context.pffCheckCallingOrSelfPermission(Manifest.permission.READ_HISTORY_BOOKMARKS) == 
-            PackageManager.PERMISSION_PRIVACY_MODE) {
-            db = mPrivateOpenHelper.getReadableDatabase();
-        }
-        else {
-            db = mOpenHelper.getReadableDatabase();
-        }
+        final SQLiteDatabase db = getDatabaseHelper(android.Manifest.permission.READ_HISTORY_BOOKMARKS)
+            .getReadableDatabase();
 
         if (match == URI_MATCH_SUGGEST || match == URI_MATCH_BOOKMARKS_SUGGEST) {
             String suggestSelection;
@@ -925,14 +918,8 @@ public class BrowserProvider extends ContentProvider {
     @Override
     public Uri insert(Uri url, ContentValues initialValues) {
         boolean isBookmarkTable = false;
-        SQLiteDatabase db;
-        if (getContext().pffCheckCallingOrSelfPermission(android.Manifest.permission.WRITE_HISTORY_BOOKMARKS) == 
-            PackageManager.PERMISSION_PRIVACY_MODE) {
-            db = mPrivateOpenHelper.getWritableDatabase();
-        }
-        else {
-            db = mOpenHelper.getWritableDatabase();
-        }
+        final SQLiteDatabase db = getDatabaseHelper(android.Manifest.permission.WRITE_HISTORY_BOOKMARKS)
+            .getWritableDatabase();
 
         int match = URI_MATCHER.match(url);
         Uri uri = null;
@@ -980,16 +967,20 @@ public class BrowserProvider extends ContentProvider {
         return uri;
     }
 
-    @Override
-    public int delete(Uri url, String where, String[] whereArgs) {
-        SQLiteDatabase db;
-        if (getContext().pffCheckCallingOrSelfPermission(android.Manifest.permission.WRITE_HISTORY_BOOKMARKS) == 
+    private final SQLiteOpenHelper getDatabaseHelper(String permission) {
+        if (getContext().pffCheckCallingOrSelfPermission(permission) == 
             PackageManager.PERMISSION_PRIVACY_MODE) {
-            db = mPrivateOpenHelper.getWritableDatabase();
+            return mPrivateOpenHelper;
         }
         else {
-            db = mOpenHelper.getWritableDatabase();
+            return mOpenHelper;
         }
+    }
+
+    @Override
+    public int delete(Uri url, String where, String[] whereArgs) {
+        final SQLiteDatabase db = getDatabaseHelper(android.Manifest.permission.WRITE_HISTORY_BOOKMARKS)
+            .getWritableDatabase();
 
         int match = URI_MATCHER.match(url);
         if (match == -1 || match == URI_MATCH_SUGGEST) {
@@ -1037,14 +1028,8 @@ public class BrowserProvider extends ContentProvider {
     @Override
     public int update(Uri url, ContentValues values, String where,
             String[] whereArgs) {
-        SQLiteDatabase db;
-        if (getContext().pffCheckCallingOrSelfPermission(android.Manifest.permission.WRITE_HISTORY_BOOKMARKS) == 
-            PackageManager.PERMISSION_PRIVACY_MODE) {
-            db = mPrivateOpenHelper.getWritableDatabase();
-        }
-        else {
-            db = mOpenHelper.getWritableDatabase();
-        }
+        final SQLiteDatabase db = getDatabaseHelper(android.Manifest.permission.WRITE_HISTORY_BOOKMARKS)
+            .getWritableDatabase();
 
         int match = URI_MATCHER.match(url);
         if (match == -1 || match == URI_MATCH_SUGGEST) {
